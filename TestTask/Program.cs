@@ -50,16 +50,23 @@ namespace TestTask
         /// <returns>Коллекция статистик по каждой букве, что была прочитана из стрима.</returns>
         private static IList<LetterStats> FillSingleLetterStats(IReadOnlyStream stream)
         {
+            List<LetterStats> letterStats = new List<LetterStats>();
+
             stream.ResetPositionToStart();
             while (!stream.IsEof)
             {
                 char c = stream.ReadNextChar();
-                // TODO : заполнять статистику с использованием метода IncStatistic. Учёт букв - регистрозависимый.
+                int LSid = letterStats.FindIndex(i => i.Letter == c.ToString());
+                if (letterStats.Count < 1 || LSid== -1)
+                {
+                    letterStats.Add(new LetterStats(c.ToString(), 1));
+                } else
+                {
+                    IncStatistic(letterStats[LSid]);
+                }
             }
 
-            //return ???;
-
-            throw new NotImplementedException();
+            return letterStats;
         }
 
         /// <summary>
