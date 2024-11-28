@@ -55,14 +55,23 @@ namespace TestTask
             stream.ResetPositionToStart();
             while (!stream.IsEof)
             {
-                char c = stream.ReadNextChar();
-                int LSid = letterStats.FindIndex(i => i.Letter == c.ToString());
-                if (letterStats.Count < 1 || LSid== -1)
+                try
                 {
-                    letterStats.Add(new LetterStats(c.ToString(), 1));
-                } else
+                    char c = stream.ReadNextChar();
+                    int LSid = letterStats.FindIndex(i => i.Letter == c.ToString());
+                    if (letterStats.Count < 1 || LSid == -1)
+                    {
+                        letterStats.Add(new LetterStats(c.ToString(), 1));
+                    }
+                    else
+                    {
+                        IncStatistic(letterStats[LSid]);
+                    }
+                }
+                catch (Exception ex)
                 {
-                    IncStatistic(letterStats[LSid]);
+                    stream.Dispose();
+                    break;
                 }
             }
 
@@ -78,16 +87,39 @@ namespace TestTask
         /// <returns>Коллекция статистик по каждой букве, что была прочитана из стрима.</returns>
         private static IList<LetterStats> FillDoubleLetterStats(IReadOnlyStream stream)
         {
+            List<LetterStats> letterStats = new List<LetterStats>();
+
             stream.ResetPositionToStart();
             while (!stream.IsEof)
             {
-                char c = stream.ReadNextChar();
-                // TODO : заполнять статистику с использованием метода IncStatistic. Учёт букв - НЕ регистрозависимый.
+                try
+                {
+                    // Игнорируем регистр. Пары букв это в любом случае строки, поэтому будем работать сразу с ними
+                    string c = stream.ReadNextChar().ToString().ToLower();
+                    string c2 = stream.ReadNextChar().ToString().ToLower();
+
+                    if (c != c2) { continue; }
+
+                    string both = c + c2;
+
+                    int LSid = letterStats.FindIndex(i => i.Letter == both);
+                    if (letterStats.Count < 1 || LSid == -1)
+                    {
+                        letterStats.Add(new LetterStats(both, 1));
+                    }
+                    else
+                    {
+                        IncStatistic(letterStats[LSid]);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    stream.Dispose();
+                    break;
+                }
             }
 
-            //return ???;
-
-            throw new NotImplementedException();
+            return letterStats;
         }
 
         /// <summary>
@@ -131,7 +163,5 @@ namespace TestTask
         {
             letterStats.Count++;
         }
-
-
     }
 }
