@@ -15,10 +15,16 @@
         /// </summary>
         public int Count;
 
-        public LetterStats(string letter, int count)
+        /// <summary>
+        /// Является буква/пара гласной или согласной
+        /// </summary>
+        public CharType Type;
+
+        public LetterStats(string letter, int count, CharType ct)
         {
             Letter = letter;
             Count = count;
+            Type = ct;
         }
     }
 }

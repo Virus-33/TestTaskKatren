@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace TestTask
@@ -20,11 +21,15 @@ namespace TestTask
             IReadOnlyStream inputStream1 = GetInputStream(args[0]);
             IReadOnlyStream inputStream2 = GetInputStream(args[1]);
 
-            IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1);
-            IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2);
+            string vowels = LoadVowels(args[2]);
 
-            //RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
-            //RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
+            IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1, vowels);
+            IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2, vowels);
+
+
+
+            RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
+            RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
 
             Console.WriteLine("Статистика по буквам:");
             PrintStatistic(singleLetterStats);
@@ -34,6 +39,32 @@ namespace TestTask
 
             Console.WriteLine("Для выхода из программы нажмите любую клавишу");
             Console.ReadKey(true);
+        }
+
+        /// <summary>
+        /// Возвращает строку, в которой содержится список поддерживаемых приложением гласных
+        /// </summary>
+        /// <param name="filepath">Путь к файлу с гласными</param>
+        /// <returns>Сплошная строка гласных без разделителей и служебных символов</returns>
+        private static string LoadVowels(string filepath)
+        {
+            string result = "";
+
+            IReadOnlyStream input = GetInputStream(filepath);
+            while (!input.IsEof)
+            {
+                try
+                {
+                    result += input.ReadNextChar().ToString();
+                }
+                catch {
+                    break;
+                }
+            }
+
+            input.Dispose();
+
+            return result;
         }
 
         /// <summary>
@@ -52,7 +83,7 @@ namespace TestTask
         /// </summary>
         /// <param name="stream">Стрим для считывания символов для последующего анализа</param>
         /// <returns>Коллекция статистик по каждой букве, что была прочитана из стрима.</returns>
-        private static IList<LetterStats> FillSingleLetterStats(IReadOnlyStream stream)
+        private static IList<LetterStats> FillSingleLetterStats(IReadOnlyStream stream, string vowels)
         {
             List<LetterStats> letterStats = new List<LetterStats>();
 
@@ -61,24 +92,15 @@ namespace TestTask
             {
                 try
                 {
-                    char c = stream.ReadNextChar();
-                    int LSid = letterStats.FindIndex(i => i.Letter == c.ToString());
-                    if (letterStats.Count < 1 || LSid == -1)
-                    {
-                        letterStats.Add(new LetterStats(c.ToString(), 1));
-                    }
-                    else
-                    {
-                        IncStatistic(letterStats[LSid]);
-                    }
+                    string c = stream.ReadNextChar().ToString();
+                    AddOrIncrement(letterStats, c, vowels);
                 }
                 catch (Exception ex)
                 {
-                    stream.Dispose();
                     break;
                 }
             }
-
+            stream.Dispose();
             return letterStats;
         }
 
@@ -89,7 +111,7 @@ namespace TestTask
         /// </summary>
         /// <param name="stream">Стрим для считывания символов для последующего анализа</param>
         /// <returns>Коллекция статистик по каждой букве, что была прочитана из стрима.</returns>
-        private static IList<LetterStats> FillDoubleLetterStats(IReadOnlyStream stream)
+        private static IList<LetterStats> FillDoubleLetterStats(IReadOnlyStream stream, string vowels)
         {
             List<LetterStats> letterStats = new List<LetterStats>();
 
@@ -101,31 +123,36 @@ namespace TestTask
                 try
                 {
                     // Игнорируем регистр. Пары букв это в любом случае строки, поэтому будем работать сразу с ними
-                    string c = stream.ReadNextChar().ToString();
+                    string c = stream.ReadNextChar().ToString().ToLower();
 
-                    if (c.ToLower() != previous.ToLower()) { previous = c; continue; }
+                    if (c != previous) { previous = c; continue; }
 
                     string both = previous + c;
 
-                    int LSid = letterStats.FindIndex(i => i.Letter == both);
-                    if (letterStats.Count < 1 || LSid == -1)
-                    {
-                        letterStats.Add(new LetterStats(both, 1));
-                    }
-                    else
-                    {
-                        IncStatistic(letterStats[LSid]);
-                    }
+                    AddOrIncrement(letterStats, both, vowels);
+                    
                     previous = c;
                 }
                 catch (Exception ex)
                 {
-                    stream.Dispose();
                     break;
                 }
             }
-
+            stream.Dispose();
             return letterStats;
+        }
+
+        private static void AddOrIncrement(List<LetterStats> letterStats, string s, string vowels)
+        {
+            int LSid = letterStats.FindIndex(i => i.Letter == s);
+            if (letterStats.Count < 1 || LSid == -1)
+            {
+                letterStats.Add(new LetterStats(s, 1, vowels.Contains(s.Substring(0, 1).ToLower()) ? CharType.Vowel : CharType.Consonants));
+            }
+            else
+            {
+                IncStatistic(letterStats[LSid]);
+            }
         }
 
         /// <summary>
@@ -137,15 +164,24 @@ namespace TestTask
         /// <param name="charType">Тип букв для анализа</param>
         private static void RemoveCharStatsByType(IList<LetterStats> letters, CharType charType)
         {
-            // TODO : Удалить статистику по запрошенному типу букв.
-            switch (charType)
+
+            IList<LetterStats> toBeDeleted = new List<LetterStats>();
+
+            foreach (LetterStats Ls in letters)
             {
-                case CharType.Consonants:
-                    break;
-                case CharType.Vowel:
-                    break;
+                if (Ls.Type == charType)
+                { 
+                    toBeDeleted.Add(Ls);
+                }
             }
-            
+
+            foreach (LetterStats Ls in toBeDeleted)
+            {
+                if (letters.IndexOf(Ls) != -1)
+                {
+                    letters.Remove(Ls);
+                }
+            }
         }
 
         /// <summary>
