@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TestTask
 {
@@ -22,10 +23,13 @@ namespace TestTask
             IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1);
             IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2);
 
-            RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
-            RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
+            //RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
+            //RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
 
+            Console.WriteLine("Статистика по буквам:");
             PrintStatistic(singleLetterStats);
+
+            Console.WriteLine("Статистика по парам букв:");
             PrintStatistic(doubleLetterStats);
 
             Console.WriteLine("Для выхода из программы нажмите любую клавишу");
@@ -89,18 +93,19 @@ namespace TestTask
         {
             List<LetterStats> letterStats = new List<LetterStats>();
 
+            string previous = "";
+
             stream.ResetPositionToStart();
             while (!stream.IsEof)
             {
                 try
                 {
                     // Игнорируем регистр. Пары букв это в любом случае строки, поэтому будем работать сразу с ними
-                    string c = stream.ReadNextChar().ToString().ToLower();
-                    string c2 = stream.ReadNextChar().ToString().ToLower();
+                    string c = stream.ReadNextChar().ToString();
 
-                    if (c != c2) { continue; }
+                    if (c.ToLower() != previous.ToLower()) { previous = c; continue; }
 
-                    string both = c + c2;
+                    string both = previous + c;
 
                     int LSid = letterStats.FindIndex(i => i.Letter == both);
                     if (letterStats.Count < 1 || LSid == -1)
@@ -111,6 +116,7 @@ namespace TestTask
                     {
                         IncStatistic(letterStats[LSid]);
                     }
+                    previous = c;
                 }
                 catch (Exception ex)
                 {
@@ -151,8 +157,15 @@ namespace TestTask
         /// <param name="letters">Коллекция со статистикой</param>
         private static void PrintStatistic(IEnumerable<LetterStats> letters)
         {
-            // TODO : Выводить на экран статистику. Выводить предварительно отсортировав по алфавиту!
-            throw new NotImplementedException();
+            List<LetterStats> sorted = letters.OrderBy(i => i.Letter).ToList();
+
+            foreach (LetterStats ls in sorted)
+            {
+                Console.WriteLine(string.Format("{0} : {1}", ls.Letter, ls.Count));
+            }
+
+            Console.WriteLine();
+
         }
 
         /// <summary>
