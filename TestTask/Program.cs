@@ -28,7 +28,8 @@ namespace TestTask
             PrintStatistic(singleLetterStats);
             PrintStatistic(doubleLetterStats);
 
-            // TODO : Необжодимо дождаться нажатия клавиши, прежде чем завершать выполнение программы.
+            Console.WriteLine("Для выхода из программы нажмите любую клавишу");
+            Console.ReadKey(true);
         }
 
         /// <summary>
