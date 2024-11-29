@@ -26,8 +26,6 @@ namespace TestTask
             IList<LetterStats> singleLetterStats = FillSingleLetterStats(inputStream1, vowels);
             IList<LetterStats> doubleLetterStats = FillDoubleLetterStats(inputStream2, vowels);
 
-
-
             RemoveCharStatsByType(singleLetterStats, CharType.Vowel);
             RemoveCharStatsByType(doubleLetterStats, CharType.Consonants);
 
@@ -142,6 +140,12 @@ namespace TestTask
             return letterStats;
         }
 
+        /// <summary>
+        /// Функция занимается добавлением/увеличением счётчика вхождений переданного символа/пары
+        /// </summary>
+        /// <param name="letterStats">Список статистик по буквам/парам</param>
+        /// <param name="s">Символ/пара</param>
+        /// <param name="vowels">Список гласных</param>
         private static void AddOrIncrement(List<LetterStats> letterStats, string s, string vowels)
         {
             int LSid = letterStats.FindIndex(i => i.Letter == s);
@@ -205,9 +209,9 @@ namespace TestTask
         }
 
         /// <summary>
-        /// Метод увеличивает счётчик вхождений по переданной структуре.
+        /// Метод увеличивает счётчик вхождений по переданному классу.
         /// </summary>
-        /// <param name="letterStats"></param>
+        /// <param name="letterStats">Экземпляр класса LetterStats</param>
         private static void IncStatistic(LetterStats letterStats)
         {
             letterStats.Count++;
